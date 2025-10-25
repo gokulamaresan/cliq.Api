@@ -215,58 +215,54 @@ namespace Cliq.Api.Repository
         }
 
 
-        public async Task<Result<string>> UploadFileToZohoAsync(string zuid, IFormFile file)
+        public async Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid)
         {
             if (file == null || file.Length == 0)
                 return Result.Fail<string>("File is null or empty.");
 
             try
             {
-
-                 var tokenResult = await _authService.GetAccessTokenAsync();
+                var tokenResult = await _authService.GetAccessTokenAsync();
                 if (tokenResult.IsFailed)
                     return Result.Fail<string>(tokenResult.Errors[0].Message ?? "Error getting access token");
 
                 var accessToken = tokenResult.Value;
 
-
-                var client = new RestClient($"{_baseUrl}files");
-
-                // Read file bytes
-                byte[] fileBytes;
-                using (var ms = new MemoryStream())
-                {
-                    await file.CopyToAsync(ms);
-                    fileBytes = ms.ToArray();
-                }
-
+                var client = new RestClient($"https://cliq.zoho.in/api/v2/buddies/{zuid}/files");
                 var request = new RestRequest("",Method.Post);
                 request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
                 request.AlwaysMultipartFormData = true;
 
-                // Add file
-                request.AddFile("file", fileBytes, file.FileName, file.ContentType);
+                // Add the file
+                using (var ms = new MemoryStream())
+                {
+                    await file.CopyToAsync(ms);
+                    var fileBytes = ms.ToArray();
+                    request.AddFile("files", fileBytes, file.FileName, file.ContentType);
+                }
 
+                // Add comments as proper JSON array in multipart
+                var commentsArray = new string[] { "Shared via API" };
+                var commentsJson = JsonSerializer.Serialize(commentsArray);
+                request.AddParameter("comments", commentsJson); // Works as multipart field
+
+                // Execute request
                 var response = await client.ExecuteAsync(request);
 
                 if (!response.IsSuccessful)
-                    return Result.Fail<string>($"Zoho file upload failed: {response.StatusCode} - {response.Content}");
+                    return Result.Fail<string>($"File send failed: {response.StatusCode} - {response.Content}");
 
-                // Parse JSON response
-                var json = JsonDocument.Parse(response.Content);
-                if (json.RootElement.TryGetProperty("data", out var dataElement) &&
-                    dataElement.TryGetProperty("file_id", out var fileIdElement))
-                {
-                    return Result.Ok(fileIdElement.GetString() ?? "");
-                }
-
-                return Result.Fail<string>("File uploaded but file_id not found in response.");
+                return Result.Ok("✅ File successfully sent to user via ZUID!");
             }
             catch (Exception ex)
             {
-                return Result.Fail<string>($"Exception during file upload: {ex.Message}");
+                return Result.Fail<string>($"Exception during file send: {ex.Message}");
             }
         }
+
+
+
+
 
     }
 }

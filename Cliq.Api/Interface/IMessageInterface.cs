@@ -12,6 +12,6 @@ namespace Cliq.Api.Interface
         Task<Result<bool>> SendMessageAsync(SendMessageRequest request);
         Task<Result<bool>> SendImageAsync(string zuid, IFormFile file);
         Task<Result<bool>> SendFileAsync(string zuid, IFormFile file);
-        Task<Result<string>> UploadFileToZohoAsync(string zuid, IFormFile file);
+        Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid);
     }
 }

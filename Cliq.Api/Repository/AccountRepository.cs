@@ -67,5 +67,42 @@ namespace Cliq.Api.Repository
             }
         }
 
+
+        // public static async Task<bool> HasScopeAsync(string accessToken, string requiredScope)
+        // {
+        //     if (string.IsNullOrEmpty(accessToken))
+        //         throw new ArgumentException("Access token is null or empty", nameof(accessToken));
+
+        //     try
+        //     {
+        //         var client = new RestClient("https://accounts.zoho.com/oauth/v2/tokeninfo");
+        //         var request = new RestRequest(Method.Get);
+        //         request.AddParameter("access_token", accessToken);
+
+        //         var response = await client.ExecuteAsync(request);
+
+        //         if (!response.IsSuccessful)
+        //         {
+        //             Console.WriteLine($"Failed to get token info: {response.StatusCode} - {response.Content}");
+        //             return false;
+        //         }
+
+        //         using var jsonDoc = JsonDocument.Parse(response.Content);
+        //         if (jsonDoc.RootElement.TryGetProperty("scope", out var scopeElement))
+        //         {
+        //             var scopes = scopeElement.GetString()?.Split(',').Select(s => s.Trim()).ToList();
+        //             return scopes != null && scopes.Contains(requiredScope);
+        //         }
+
+        //         return false;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Console.WriteLine($"Exception checking token scope: {ex.Message}");
+        //         return false;
+        //     }
+        // }
+    
+
     }
 }

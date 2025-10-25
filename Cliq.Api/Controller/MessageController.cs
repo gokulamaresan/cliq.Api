@@ -83,7 +83,7 @@ namespace Cliq.Api.Controller
                 if (file == null || file.Length == 0)
                     return BadRequest(new { Error = "File is required." });
 
-                var result = await _IMessageInterface.UploadFileToZohoAsync(zuid, file);
+                var result = await _IMessageInterface.SendFileToUserByZuidAsync(file , zuid);
 
                 if (result.IsFailed)
                     return BadRequest(new { Error = result.Errors[0].Message });
