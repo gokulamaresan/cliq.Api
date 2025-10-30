@@ -30,7 +30,6 @@ namespace Cliq.Api.Repository
         {
             try
             {
-
                 var accessTokenResult = await _authService.GetAccessTokenAsync();
                 if (accessTokenResult.IsFailed)
                     return Result.Fail<bool>(accessTokenResult.Errors[0].Message ?? "Error in getting access/refresh token");
@@ -65,157 +64,7 @@ namespace Cliq.Api.Repository
         }
 
 
-
-
-        private bool ValidateFile(IFormFile file, bool isImage = false)
-        {
-            if (file == null) return false;
-
-            // Max file size 10 MB (adjust as needed)
-            const long maxFileSize = 10 * 1024 * 1024;
-            if (file.Length > maxFileSize) return false;
-
-            if (isImage)
-            {
-                // Allowed image types
-                var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/bmp" };
-                if (!allowedTypes.Contains(file.ContentType)) return false;
-            }
-            else
-            {
-                // For general files, allow these types (you can expand)
-                var allowedTypes = new[] {
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "text/plain",
-            "application/zip",
-            "application/octet-stream" // generic
-        };
-                if (!allowedTypes.Contains(file.ContentType)) return false;
-            }
-
-            return true;
-        }
-
-        private bool IsTransientError(RestResponse response)
-        {
-            // Retry only for server errors or network issues
-            if (response == null) return true; // network exception
-            if ((int)response.StatusCode >= 500) return true; // 5xx errors
-            if (response.ResponseStatus == ResponseStatus.TimedOut ||
-                response.ResponseStatus == ResponseStatus.Error ||
-                response.ResponseStatus == ResponseStatus.Aborted) return true;
-
-            return false;
-        }
-
-        public async Task<Result<bool>> SendImageAsync(string zuid, IFormFile file)
-        {
-            if (!ValidateFile(file, isImage: true))
-                return Result.Fail<bool>("Invalid image file. Only JPEG, PNG, GIF, BMP allowed, max 10 MB.");
-
-            try
-            {
-                var tokenResult = await _authService.GetAccessTokenAsync();
-                if (tokenResult.IsFailed)
-                    return Result.Fail<bool>(tokenResult.Errors[0].Message ?? "Error getting access token");
-
-                var accessToken = tokenResult.Value;
-                var client = new RestClient($"{_baseUrl}bots/{_botName}/message");
-
-                for (int attempt = 1; attempt <= 2; attempt++)
-                {
-                    var request = new RestRequest("", Method.Post);
-                    request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
-                    request.AlwaysMultipartFormData = true;
-
-                    byte[] fileBytes;
-                    using (var ms = new MemoryStream())
-                    {
-                        await file.CopyToAsync(ms);
-                        fileBytes = ms.ToArray();
-                    }
-
-                    request.AddFile("attachments", fileBytes, file.FileName, file.ContentType);
-                    request.AddParameter("text", "Image sent via bot");
-                    request.AddParameter("userids", zuid);
-                    request.AddParameter("sync_message", true);
-
-                    var response = await client.ExecuteAsync(request);
-
-                    if (response.IsSuccessful) return Result.Ok(true);
-
-                    // Only retry if it's a transient error
-                    if (IsTransientError(response))
-                        return Result.Fail<bool>($"Permanent error: {response.Content}");
-
-                    // Last attempt failed
-                    if (attempt == 2)
-                        return Result.Fail<bool>($"Failed after 2 attempts: {response.Content}");
-                }
-
-                return Result.Fail<bool>("Unexpected error while sending image.");
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail<bool>($"Exception: {ex.Message}");
-            }
-        }
-
-        public async Task<Result<bool>> SendFileAsync(string zuid, IFormFile file)
-        {
-            if (!ValidateFile(file))
-                return Result.Fail<bool>("Invalid file type or size. Max 10 MB.");
-
-            try
-            {
-                var tokenResult = await _authService.GetAccessTokenAsync();
-                if (tokenResult.IsFailed)
-                    return Result.Fail<bool>(tokenResult.Errors[0].Message ?? "Error getting access token");
-
-                var accessToken = tokenResult.Value;
-                var client = new RestClient($"{_baseUrl}bots/{_botName}/message");
-
-                for (int attempt = 1; attempt <= 2; attempt++)
-                {
-                    var request = new RestRequest("", Method.Post);
-                    request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
-                    request.AlwaysMultipartFormData = true;
-
-                    byte[] fileBytes;
-                    using (var ms = new MemoryStream())
-                    {
-                        await file.CopyToAsync(ms);
-                        fileBytes = ms.ToArray();
-                    }
-
-                    request.AddFile("attachments", fileBytes, file.FileName, file.ContentType);
-                    request.AddParameter("text", "File sent via bot");
-                    request.AddParameter("userids", zuid);
-                    request.AddParameter("sync_message", true);
-
-                    var response = await client.ExecuteAsync(request);
-
-                    if (response.IsSuccessful) return Result.Ok(true);
-
-                    if (IsTransientError(response))
-                        return Result.Fail<bool>($"Permanent error: {response.Content}");
-
-                    if (attempt == 2)
-                        return Result.Fail<bool>($"Failed after 2 attempts: {response.Content}");
-                }
-
-                return Result.Fail<bool>("Unexpected error while sending file.");
-            }
-            catch (Exception ex)
-            {
-                return Result.Fail<bool>($"Exception: {ex.Message}");
-            }
-        }
-
-
-        public async Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid , string comments)
+        public async Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid, string comments)
         {
             if (file == null || file.Length == 0)
                 return Result.Fail<string>("File is null or empty.");
@@ -228,8 +77,8 @@ namespace Cliq.Api.Repository
 
                 var accessToken = tokenResult.Value;
 
-                var client = new RestClient($"https://cliq.zoho.in/api/v2/buddies/{zuid}/files");
-                var request = new RestRequest("",Method.Post);
+                var client = new RestClient($"{_baseUrl}buddies/{zuid}/files");
+                var request = new RestRequest("", Method.Post);
                 request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
                 request.AlwaysMultipartFormData = true;
 
@@ -242,8 +91,8 @@ namespace Cliq.Api.Repository
                 }
 
                 // Add comments as proper JSON array in multipart
-                // var commentsArray = new string[] { "Shared via API" };
-                var commentsJson = JsonSerializer.Serialize(comments);
+                var commentsArray = new string[] { comments};
+                var commentsJson = JsonSerializer.Serialize(commentsArray);
                 request.AddParameter("comments", commentsJson); // Works as multipart field
 
                 // Execute request
@@ -261,6 +110,45 @@ namespace Cliq.Api.Repository
         }
 
 
+
+        public async Task<Result<string>> SendTextMessageToUserByZuidAsync(string message, string zuid)
+        {
+            if (string.IsNullOrEmpty(message))
+                return Result.Fail<string>("Message is null or empty.");
+
+            if (string.IsNullOrEmpty(zuid))
+                return Result.Fail<string>("ZUID is null or empty.");
+
+            try
+            {
+                var tokenResult = await _authService.GetAccessTokenAsync();
+                if (tokenResult.IsFailed)
+                    return Result.Fail<string>(tokenResult.Errors[0].Message ?? "Error getting access token");
+
+                var accessToken = tokenResult.Value;
+
+                var client = new RestClient($"{_baseUrl}buddies/{zuid}/message");
+                var request = new RestRequest("", Method.Post);
+                request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
+                request.AddHeader("Content-Type", "application/json");
+
+                // Add the message payload
+                var payload = new { text = message };
+                request.AddJsonBody(payload);
+
+                // Execute request
+                var response = await client.ExecuteAsync(request);
+
+                if (!response.IsSuccessful)
+                    return Result.Fail<string>($"Message send failed: {response.StatusCode} - {response.Content}");
+
+                return Result.Ok("✅ Text message successfully sent to user via ZUID!");
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<string>($"Exception during message send: {ex.Message}");
+            }
+        }
 
 
 

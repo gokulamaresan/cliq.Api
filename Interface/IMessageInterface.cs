@@ -10,8 +10,7 @@ namespace Cliq.Api.Interface
     public interface IMessageInterface
     {
         Task<Result<bool>> SendMessageAsync(SendMessageRequest request);
-        Task<Result<bool>> SendImageAsync(string zuid, IFormFile file);
-        Task<Result<bool>> SendFileAsync(string zuid, IFormFile file);
-        Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid , string comments);
+        Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid, string comments);
+        Task<Result<string>> SendTextMessageToUserByZuidAsync(string message, string zuid);
     }
 }
