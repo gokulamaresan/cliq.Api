@@ -1,3 +1,5 @@
+using cliq.Api.Interface;
+using cliq.Api.Repository;
 using Cliq.Api.Interface;  // Assuming this is where IAccountinterface is defined
 using Cliq.Api.Repository;
 using Cliq.Api.Services;
@@ -25,6 +27,7 @@ builder.Services.AddSingleton<CliqAuthService>();
 builder.Services.AddScoped<IAccountInterface, AccountRepository>();
 builder.Services.AddScoped<IAuthtInterface, AuthRepository>();
 builder.Services.AddScoped<IMessageInterface, MessageRepository>();
+builder.Services.AddScoped<IChannelInterface, ChannelRepository>();
 
 
 

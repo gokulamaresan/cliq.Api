@@ -1,14 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using cliq.Api.Models.Messages;
 using FluentResults;
-using Models.Account;
 
 namespace Cliq.Api.Interface
 {
     public interface IMessageInterface
     {
+        Task<Result<List<UsersList>>> GetUsersAsync();
         Task<Result<bool>> SendMessageAsync(SendMessageRequest request);
         Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid, string comments);
         Task<Result<string>> SendTextMessageToUserByZuidAsync(string message, string zuid);

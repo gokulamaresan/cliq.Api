@@ -35,6 +35,24 @@ namespace Cliq.Api.Controller
 
         }
 
+        [HttpGet("Get-Channels")]
+        public async Task<IActionResult> GetChannels()
+        {
+            try
+            {
+                var result = await _IAccountInterface.GetAllChannelsAsync();
+                if (result.IsFailed)
+                    return BadRequest(new { errors = result.Errors[0].Message });
+
+                return Ok(result.Value);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { errors = ex.Message });
+            }
+
+        }
+
        
     }
 }

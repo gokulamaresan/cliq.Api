@@ -1,28 +1,36 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using Cliq.Api.Interface;
 using Cliq.Api.Services;
 using FluentResults;
 using Models.Account;
+using Models.ChannelDto;
 using RestSharp;
+using Channel = Models.ChannelDto.Channel;
 
 namespace Cliq.Api.Repository
 {
     public class AccountRepository : IAccountInterface
     {
         private readonly IConfiguration _configuration;
-        string _baseUrl;
-        string _botName;
         private readonly CliqAuthService _authService;
+        private readonly string _baseUrl;
+        private readonly string _botName;
 
+        // ✅ Paths to your JSON files (Datas folder)
+        private readonly string _userFilePath ;
+        private readonly string _channelFilePath;
         public AccountRepository(CliqAuthService authService, IConfiguration configuration)
         {
             _authService = authService;
             _configuration = configuration;
             _botName = _configuration["Message:BotIdentity"];
             _baseUrl = _configuration["ApiCall:BaseUrl"];
+            _userFilePath = _configuration["Datas:UserData"];
+            _channelFilePath = _configuration["Datas:ChannelsData"];
         }
 
-
+        // ✅ Fetch all users and store in Datas/userdetails.json
         public async Task<Result<List<User>>> GetUsersAsync()
         {
             try
@@ -59,6 +67,10 @@ namespace Cliq.Api.Repository
 
                 } while (!string.IsNullOrEmpty(nextToken));
 
+                // ✅ Store user list in Datas/userdetails.json
+                var json = JsonSerializer.Serialize(allUsers, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(_userFilePath, json);
+
                 return Result.Ok(allUsers);
             }
             catch (Exception ex)
@@ -67,42 +79,42 @@ namespace Cliq.Api.Repository
             }
         }
 
+        // ✅ Fetch all channels and store in Datas/channeldetails.json
+        public async Task<Result<List<Channel>>> GetAllChannelsAsync()
+        {
+            try
+            {
+                var accessTokenResult = await _authService.GetAccessTokenAsync();
+                if (accessTokenResult.IsFailed)
+                    return Result.Fail<List<Channel>>(accessTokenResult.Errors[0].Message ?? "Error in getting access/refresh token");
 
-        // public static async Task<bool> HasScopeAsync(string accessToken, string requiredScope)
-        // {
-        //     if (string.IsNullOrEmpty(accessToken))
-        //         throw new ArgumentException("Access token is null or empty", nameof(accessToken));
+                var accessToken = accessTokenResult.Value;
+                var allChannels = new List<Channel>();
 
-        //     try
-        //     {
-        //         var client = new RestClient("https://accounts.zoho.com/oauth/v2/tokeninfo");
-        //         var request = new RestRequest(Method.Get);
-        //         request.AddParameter("access_token", accessToken);
+                var client = new RestClient(_baseUrl + "channels");
+                var request = new RestRequest("", Method.Get);
+                request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
 
-        //         var response = await client.ExecuteAsync(request);
+                var response = await client.ExecuteAsync(request);
+                if (!response.IsSuccessful)
+                    return Result.Fail<List<Channel>>($"Failed to fetch channels: {response.Content}");
 
-        //         if (!response.IsSuccessful)
-        //         {
-        //             Console.WriteLine($"Failed to get token info: {response.StatusCode} - {response.Content}");
-        //             return false;
-        //         }
+                var channelsResponse = JsonSerializer.Deserialize<ChannelsResponse>(response.Content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        //         using var jsonDoc = JsonDocument.Parse(response.Content);
-        //         if (jsonDoc.RootElement.TryGetProperty("scope", out var scopeElement))
-        //         {
-        //             var scopes = scopeElement.GetString()?.Split(',').Select(s => s.Trim()).ToList();
-        //             return scopes != null && scopes.Contains(requiredScope);
-        //         }
+                if (channelsResponse?.channels != null)
+                    allChannels.AddRange(channelsResponse.channels);
 
-        //         return false;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Console.WriteLine($"Exception checking token scope: {ex.Message}");
-        //         return false;
-        //     }
-        // }
-    
+                // ✅ Store channel list in Datas/channeldetails.json
+                var json = JsonSerializer.Serialize(allChannels, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(_channelFilePath, json);
 
+                return Result.Ok(allChannels);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<List<Channel>>(ex.Message);
+            }
+        }
     }
 }

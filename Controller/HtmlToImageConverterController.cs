@@ -16,7 +16,8 @@ namespace Cliq.Api.Controller
 
     public class HtmlToImageConverterController : ControllerBase  // <-- inherit ControllerBase
     {
-        public static async Task<byte[]> ConvertHtmlToImageBytesAsync(string html)
+
+        private static async Task<byte[]> ConvertHtmlToImageBytesAsync(string html)
         {
             var htmlContent = html.Replace("\\n", "\n");
             var browserFetcher = new BrowserFetcher();

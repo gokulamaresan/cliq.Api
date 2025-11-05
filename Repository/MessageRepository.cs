@@ -1,9 +1,8 @@
-using System.Net.Http.Headers;
 using System.Text.Json;
+using cliq.Api.Models.Messages;
 using Cliq.Api.Interface;
 using Cliq.Api.Services;
 using FluentResults;
-using Models.Account;
 using RestSharp;
 
 namespace Cliq.Api.Repository
@@ -14,17 +13,37 @@ namespace Cliq.Api.Repository
         string _botName;
         string _baseUrl;
         private readonly CliqAuthService _authService;
+        private readonly string _UsersFilePath;
 
         public MessageRepository(CliqAuthService authService, IConfiguration configuration)
         {
+            _configuration = configuration;
             _authService = authService;
             _configuration = configuration;
             _botName = _configuration["Message:BotIdentity"];
             _baseUrl = _configuration["ApiCall:BaseUrl"];
+            _UsersFilePath = _configuration["Datas:UserData"];
         }
 
+        //get users
+        public async Task<Result<List<UsersList>>> GetUsersAsync()
+        {
+            try
+            {
+                var result = await File.ReadAllTextAsync(_UsersFilePath);
 
+                var usersList = JsonSerializer.Deserialize<List<UsersList>>(result);
 
+                if (usersList == null)
+                    return Result.Fail<List<UsersList>>("Failed to deserialize users");
+
+                return Result.Ok(usersList);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<List<UsersList>>(ex.Message);
+            }
+        }
 
         public async Task<Result<bool>> SendMessageAsync(SendMessageRequest request)
         {

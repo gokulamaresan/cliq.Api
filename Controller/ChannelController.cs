@@ -1,137 +1,89 @@
-using cliq.Api.Models.Messages;
-using Cliq.Api.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using cliq.Api.Interface;
 using Microsoft.AspNetCore.Mvc;
-using Models.Account;
 using PuppeteerSharp;
 using PuppeteerSharp.BrowserData;
 using PuppeteerSharp.Media;
 
-namespace Cliq.Api.Controller
+namespace cliq.Api.Controller
 {
-    [Route("[controller]")]
     [ApiController]
-    public class MessageController : ControllerBase
+    [Route("api/[controller]")]
+    public class ChannelController : ControllerBase
     {
-        private readonly IMessageInterface _IMessageInterface;
+        private readonly IChannelInterface _channelInterface;
+          private static InstalledBrowser _cachedInstalledBrowser;
 
-        // Cache the Chromium browser download to avoid re-downloading on every request
-        private static InstalledBrowser _cachedInstalledBrowser;
-
-        public MessageController(IMessageInterface IMessageInterface)
+        public ChannelController(IChannelInterface channelInterface)
         {
-            _IMessageInterface = IMessageInterface;
+            _channelInterface = channelInterface;
         }
 
-        // Get users
-        [HttpGet("get-users")]
-        public async Task<IActionResult> GetUsers()
+        // get channel details
+        [HttpGet("channel-details")]
+        public async Task<IActionResult> GetChannelDetails()
         {
             try
             {
-                var result = await _IMessageInterface.GetUsersAsync();
+                var result = await _channelInterface.GetChannelDetails();
                 if (result.IsFailed)
-                    return BadRequest(new { Error = result.Errors[0].Message });
+                    return BadRequest(new { errors = result.Errors[0].Message });
 
                 return Ok(result.Value);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+                return BadRequest(new { errors = ex.Message });
             }
         }
 
-        // ---------------------------------------------
-        // Send text message through Zoho Cliq bot
-        // ---------------------------------------------
-        [HttpPost("send-text-message-bot")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
+        //post message in channel
+        [HttpPost("post-message")]
+        public async Task<IActionResult> PostMessageInChannel([FromBody] string message, [FromQuery] string channelName)
         {
             try
             {
-                var result = await _IMessageInterface.SendMessageAsync(request);
+                var result = await _channelInterface.PostMessageInChannel(message, channelName);
                 if (result.IsFailed)
-                    return BadRequest(new { Error = result.Errors[0].Message });
+                    return BadRequest(new { errors = result.Errors[0].Message });
 
-                return Ok(new { Message = "Message sent successfully" });
+                return Ok(result.Value);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+                return BadRequest(new { errors = ex.Message });
             }
         }
 
-        // ---------------------------------------------
-        // Upload and send file to user by ZUID
-        // ---------------------------------------------
-        [HttpPost("send-file-to-user-by-zuid")]
-        public async Task<IActionResult> UploadFile([FromForm] string zuid, IFormFile file, [FromForm] string comments)
+        //upload file to channel
+        [HttpPost("Send-file-channel")]
+        public async Task<IActionResult> UploadFileToChannel([FromQuery] string channelName, IFormFile file, [FromQuery] string? comments)
         {
             try
             {
-                if (string.IsNullOrEmpty(zuid))
-                    return BadRequest(new { Error = "ZUID is required." });
-
-                if (file == null || file.Length == 0)
-                    return BadRequest(new { Error = "File is required." });
-
-                var result = await _IMessageInterface.SendFileToUserByZuidAsync(file, zuid, comments);
-
+                var result = await _channelInterface.UploadFileToChannelAsync(channelName, file, comments);
                 if (result.IsFailed)
-                    return BadRequest(new { Error = result.Errors[0].Message });
+                    return BadRequest(new { errors = result.Errors[0].Message });
 
-                return Ok(new
-                {
-                    Message = "File uploaded successfully",
-                    FileId = result.Value
-                });
+                return Ok(result.Value);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+                return BadRequest(new { errors = ex.Message });
             }
         }
 
-        // ---------------------------------------------
-        // Send text message directly to user by ZUID
-        // ---------------------------------------------
-        [HttpPost("send-text-message-to-user-by-zuid")]
-        public async Task<IActionResult> SendTextMessage([FromForm] string zuid, [FromForm] string message)
+
+        [HttpPost("send-html-to-file")] 
+        public async Task<IActionResult> SendHtmlToFile([FromForm] string channelName, [FromForm] string htmlCode, [FromForm] string format = "pdf", [FromForm] string comments = "")
         {
             try
             {
-                if (string.IsNullOrEmpty(zuid))
-                    return BadRequest(new { Error = "ZUID is required." });
-
-                if (string.IsNullOrEmpty(message))
-                    return BadRequest(new { Error = "Message is required." });
-
-                var result = await _IMessageInterface.SendTextMessageToUserByZuidAsync(message, zuid);
-
-                if (result.IsFailed)
-                    return BadRequest(new { Error = result.Errors[0].Message });
-
-                return Ok(new
-                {
-                    Message = "Text message sent successfully",
-                    Response = result.Value
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
-            }
-        }
-
-        // ---------------------------------------------
-        // Convert HTML to PDF or image and send via Zoho Cliq
-        // ---------------------------------------------
-        [HttpPost("send-html-to-file-by-zuid")]
-        public async Task<IActionResult> SendHtmlToFile([FromForm] string zuid, [FromForm] string htmlCode, [FromForm] string format = "pdf", [FromForm] string comments = "")
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(zuid))
-                    return BadRequest(new { Error = "ZUID is required." });
+                if (string.IsNullOrEmpty(channelName))
+                    return BadRequest(new { Error = "Channel Name is required." });
 
                 if (string.IsNullOrEmpty(htmlCode))
                     return BadRequest(new { Error = "HTML code is required." });
@@ -169,7 +121,7 @@ namespace Cliq.Api.Controller
                 };
 
                 // Send the file to the user
-                var result = await _IMessageInterface.SendFileToUserByZuidAsync(formFile, zuid, comments);
+                var result = await _channelInterface.UploadFileToChannelAsync(channelName, formFile , comments);
 
                 if (result.IsFailed)
                     return BadRequest(new { Error = result.Errors[0].Message });
@@ -286,8 +238,6 @@ namespace Cliq.Api.Controller
                 Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
             });
         }
-
-
 
     }
 }
