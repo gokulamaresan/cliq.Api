@@ -110,7 +110,7 @@ namespace Cliq.Api.Repository
                 }
 
                 // Add comments as proper JSON array in multipart
-                var commentsArray = new string[] { comments};
+                var commentsArray = new string[] { comments };
                 var commentsJson = JsonSerializer.Serialize(commentsArray);
                 request.AddParameter("comments", commentsJson); // Works as multipart field
 
@@ -169,6 +169,43 @@ namespace Cliq.Api.Repository
             }
         }
 
+        public async Task<Result<string>> SendBotVoiceCallAsync(string message, List<string> userIds)
+        {
+            try
+            {
+                var accessTokenResult = await _authService.GetAccessTokenAsync();
+                if (accessTokenResult.IsFailed)
+                    return Result.Fail<string>("Failed to get access token");
+
+                var accessToken = accessTokenResult.Value;
+
+                var client = new RestClient($"{_baseUrl}bots/{_botName}/calls");
+                var request = new RestRequest("", Method.Post);
+                request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
+                request.AddHeader("Content-Type", "application/json");
+
+                var body = new
+                {
+                    text = message,
+                    user_ids = userIds,
+                    retry = 1,
+                    loop = 1
+                };
+
+            request.AddJsonBody(body);
+
+            var response = await client.ExecuteAsync(request);
+
+            if (!response.IsSuccessful)
+                return Result.Fail<string>($"Failed to send bot call: {response.Content}");
+
+            return Result.Ok("Voice call with confirmation option triggered successfully.");
+        }
+            catch (Exception ex)
+            {
+                return Result.Fail<string>(ex.Message);
+            }
+}
 
 
     }

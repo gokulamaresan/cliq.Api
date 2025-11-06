@@ -9,5 +9,6 @@ namespace Cliq.Api.Interface
         Task<Result<bool>> SendMessageAsync(SendMessageRequest request);
         Task<Result<string>> SendFileToUserByZuidAsync(IFormFile file, string zuid, string comments);
         Task<Result<string>> SendTextMessageToUserByZuidAsync(string message, string zuid);
+        Task<Result<string>> SendBotVoiceCallAsync(string message, List<string> userIds);
     }
 }

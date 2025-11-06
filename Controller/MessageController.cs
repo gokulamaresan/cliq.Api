@@ -1,4 +1,5 @@
 using cliq.Api.Models.Messages;
+using Cliq.Api.Attributes;
 using Cliq.Api.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Models.Account;
@@ -8,7 +9,7 @@ using PuppeteerSharp.Media;
 
 namespace Cliq.Api.Controller
 {
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class MessageController : ControllerBase
     {
@@ -288,6 +289,41 @@ namespace Cliq.Api.Controller
         }
 
 
+        // send voice allerts
+        [HttpPost("send-voice-alert-to-user-by-zuid")]
+        public async Task<IActionResult> SendVoiceAlert([FromBody] VoiceAlertMessageRequest request)
+        {
+            try
+            {
+                if (request.Zuids == null || !request.Zuids.Any())
+                    return BadRequest(new { Error = "ZUIDDs are required." });
 
+                if (string.IsNullOrEmpty(request.Message))
+                    return BadRequest(new { Error = "Message is required." });
+
+                var result = await _IMessageInterface.SendBotVoiceCallAsync(request.Message, request.Zuids);
+
+                if (result.IsFailed)
+                    return BadRequest(new { Error = result.Errors[0].Message });
+
+                return Ok(new
+                {
+                    Message = "Voice alert sent successfully",
+                    Response = result.Value
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+            }
+        }
+
+
+        public class VoiceAlertMessageRequest
+        {
+            public List<string> Zuids { get; set; }
+
+            public string Message { get; set; }
+        }
     }
 }

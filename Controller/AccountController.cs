@@ -1,13 +1,13 @@
-using Cliq.Api.Repository;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using Models.Account;
 using Cliq.Api.Interface;
+using Cliq.Api.AdminApiAttribute;
 
 namespace Cliq.Api.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AdminApiKey] 
+
     public class AccountController : ControllerBase
     {
         private readonly IAccountInterface _IAccountInterface;
@@ -53,6 +53,6 @@ namespace Cliq.Api.Controller
 
         }
 
-       
+
     }
 }
