@@ -41,9 +41,7 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // Send text message through Zoho Cliq bot
-        // ---------------------------------------------
+
         [HttpPost("send-text-message-bot")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
@@ -61,14 +59,13 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // Upload and send file to user by ZUID
-        // ---------------------------------------------
+
         [HttpPost("send-file-to-user-by-zuid")]
         public async Task<IActionResult> UploadFile([FromForm] string zuid, IFormFile file, [FromForm] string comments)
         {
             try
             {
+
                 if (string.IsNullOrEmpty(zuid))
                     return BadRequest(new { Error = "ZUID is required." });
 
@@ -92,11 +89,10 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // Send text message directly to user by ZUID
-        // ---------------------------------------------
+
+
         [HttpPost("send-text-message-to-user-by-zuid")]
-        public async Task<IActionResult> SendTextMessage([FromForm] string zuid, [FromForm] string message)
+        public async Task<IActionResult> SendTextMessage([FromQuery] string zuid, [FromBody] string message)
         {
             try
             {
@@ -123,9 +119,7 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // Convert HTML to PDF or image and send via Zoho Cliq
-        // ---------------------------------------------
+
         [HttpPost("send-html-to-file-by-zuid")]
         public async Task<IActionResult> SendHtmlToFile([FromForm] string zuid, [FromForm] string htmlCode, [FromForm] string format = "pdf", [FromForm] string comments = "")
         {
@@ -187,9 +181,7 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // HTML -> PDF conversion using PuppeteerSharp
-        // ---------------------------------------------
+
         private async Task<byte[]> ConvertHtmlToPdfAsync(string htmlCode)
         {
             try
@@ -214,9 +206,7 @@ namespace Cliq.Api.Controller
             }
         }
 
-        // ---------------------------------------------
-        // HTML -> Image conversion using PuppeteerSharp
-        // ---------------------------------------------
+
         private async Task<byte[]> ConvertHtmlToImageAsync(string htmlCode, string format)
         {
             try
@@ -265,11 +255,6 @@ namespace Cliq.Api.Controller
             }
         }
 
-
-        // ---------------------------------------------
-        // Launch Chromium browser instance (cached)
-        // Works with PuppeteerSharp v21+
-        // ---------------------------------------------
         private static async Task<IBrowser> GetBrowserAsync()
         {
             if (_cachedInstalledBrowser == null)
@@ -319,11 +304,256 @@ namespace Cliq.Api.Controller
         }
 
 
-        public class VoiceAlertMessageRequest
-        {
-            public List<string> Zuids { get; set; }
 
-            public string Message { get; set; }
+
+
+        [HttpPost("send-html-to-file-by-zuid-TNA")]
+        public async Task<IActionResult> SendTnaHtmlToFile(string zuid, [FromBody] TNACommentDto tNACommentDto)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(zuid))
+                    return BadRequest(new { Error = "ZUID is required." });
+
+                var byteRes = await SendHtmlToImage(tNACommentDto);
+                var bytes = (byte[])((FileContentResult)byteRes).FileContents;
+
+                // Send the file to the user
+                var result = await _IMessageInterface.SendFileToUserByZuid(bytes, tNACommentDto.JobNo, "image/png", zuid, $"Recived From {tNACommentDto.JobNo} - {tNACommentDto.TaskName}");
+
+                if (result.IsFailed)
+                    return BadRequest(new { Error = result.Errors[0].Message });
+
+                return Ok(new
+                {
+                    Message = $"HTML converted to image and sent successfully",
+                    FileId = result.Value
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+            }
         }
+
+
+
+        private async Task<IActionResult> SendHtmlToImage(TNACommentDto tNACommentDto)
+        {
+            try
+            {
+
+
+                var maincontent = $@"<div class='command-card'>
+                                        <div class='command-header'>
+                                        <div class='d-flex'>
+                                            <h2><i class='bi bi-gear-fill'></i> {tNACommentDto.JobNo}</h2>
+                                            <div class='status-badge ms-2'>{tNACommentDto.TaskName}</div>
+                                        </div>
+                                        <div class='command-time'><i class='bi bi-clock-fill'></i> {tNACommentDto.CreatedTime}</div>
+                                        </div>
+
+                                        <div class='command-body'>
+                                        <div class='detail'>
+                                            <label><i class='bi bi-upc-scan'></i> Job No:</label>
+                                            <span>{tNACommentDto.JobNo}</span>
+                                        </div>
+
+                                        <div class='detail'>
+                                            <label><i class='bi bi-grid-3x3-gap-fill'></i> Category:</label>
+                                            <span>{tNACommentDto.CommentGroup}</span>
+                                        </div>
+
+                                        <div class='detail'>
+                                            <label><i class='bi bi-terminal'></i> Command:</label>
+                                            <span>
+                                                {tNACommentDto.CommentText}
+                                            </span>
+                                        </div>
+
+                                        <div class='detail'>
+                                            <label><i class='bi bi-person-badge-fill'></i> Command By:</label>
+                                            <span>{tNACommentDto.UserName}</span>
+                                        </div>
+                                        </div>
+                                    </div>";
+
+
+                var bytes = await ConvertHtmlToImageBytesTNA(maincontent);
+
+                return File(bytes, "image/png", "converted_image.png");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+            }
+        }
+
+
+
+        private static async Task<byte[]> ConvertHtmlToImageBytesTNA(string html)
+        {
+            var htmlContent = html.Replace("\\n", "\n");
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+
+            try
+            {
+                using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+                });
+
+                using var page = await browser.NewPageAsync();
+
+                // ✅ Set a minimal viewport to fit content automatically
+                await page.SetViewportAsync(new ViewPortOptions
+                {
+                    Width = 800,
+                    Height = 600,
+                    DeviceScaleFactor = 2 // makes image sharper (2x resolution)
+                });
+
+                // ✅ Load HTML content (with transparent background)
+                string fullHtml = $@"
+                                <!DOCTYPE html>
+                                <html lang='en'>
+                                <head>
+                                <meta charset='UTF-8'>
+                                <style>
+                               body {{
+                                    margin: 0;
+                                    padding: 0;
+                                    background: #0d2015;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    min-height: 100vh;
+                                    font-family: 'Gill Sans', 'Trebuchet MS', sans-serif !important;
+                                }}
+
+                                .command-card {{
+                                    background: #133622;
+                                    color: #edf1f6;
+                                    border-radius: 14px;
+                                    width: 480px;
+                                    padding: 22px 28px;
+                                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+                                    border: 1px solid rgba(255, 255, 255, 0.1);
+                                }}
+
+                                .command-header {{
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: flex-start;
+                                    margin-bottom: 16px;
+                                }}
+
+                                .command-header h2 {{
+                                    font-size: 0.95rem;
+                                    margin: 0;
+                                    font-weight: 600;
+                                    color: #edf1f6;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 6px;
+                                }}
+
+                                .command-header h2 i {{
+                                    color: #22b469;
+                                }}
+
+                                .status-badge {{
+                                    background: #22b469;
+                                    color: #fff;
+                                    font-size: 0.7rem;
+                                    padding: 3px 8px;
+                                    border-radius: 6px;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                }}
+
+                                .command-time {{
+                                    font-size: 0.75rem;
+                                    color: #b9d3c2;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                }}
+
+                                .command-time i {{
+                                    color: #22b469;
+                                }}
+
+                                .command-body {{
+                                    border-top: 1px solid rgba(255, 255, 255, 0.12);
+                                    padding-top: 12px;
+                                }}
+
+                                .detail {{
+                                    margin-bottom: 10px;
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: flex-start;
+                                }}
+
+                                .detail label {{
+                                    color: #8fda91;
+                                    font-weight: 600;
+                                    font-size: 0.75rem;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 5px;
+                                    flex: 0 0 30%;
+                                }}
+
+                                .detail span {{
+                                    flex: 1;
+                                    color: #edf1f6;
+                                    font-size: 0.75rem;
+                                    line-height: 1.3rem;
+                                    word-wrap: break-word;
+                                }}
+
+                                </style>
+                                <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
+                                <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>
+                                </head>
+                                <body>
+                                {htmlContent}
+                                </body>
+                                </html>";
+
+                await page.SetContentAsync(fullHtml, new NavigationOptions
+                {
+                    WaitUntil = new[] { WaitUntilNavigation.Load }
+                });
+
+                // ✅ Wait for .command-card to render
+                await page.WaitForSelectorAsync(".command-card");
+
+                // ✅ Select the element
+                var element = await page.QuerySelectorAsync(".command-card");
+
+                if (element == null)
+                    throw new Exception("Command card not found in HTML content.");
+
+                // ✅ Screenshot only the element (no background or blank space)
+                var screenshotBytes = await element.ScreenshotDataAsync(new ScreenshotOptions
+                {
+                    Type = ScreenshotType.Png,
+                    OmitBackground = true // transparent background
+                });
+
+                return screenshotBytes;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to convert HTML to image: " + ex.Message, ex);
+            }
+        }
+
+
     }
 }

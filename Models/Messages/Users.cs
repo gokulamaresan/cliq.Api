@@ -11,6 +11,7 @@ namespace cliq.Api.Models.Messages
         // public string email_id { get; set; }
         public string zuid { get; set; }
         public string name { get; set; }
+        public string email_id { get; set; }
 
     }
 }

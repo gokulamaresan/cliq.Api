@@ -109,10 +109,14 @@ namespace Cliq.Api.Repository
                     request.AddFile("files", fileBytes, file.FileName, file.ContentType);
                 }
 
-                // Add comments as proper JSON array in multipart
-                var commentsArray = new string[] { comments };
-                var commentsJson = JsonSerializer.Serialize(commentsArray);
-                request.AddParameter("comments", commentsJson); // Works as multipart field
+
+                if (!string.IsNullOrEmpty(comments))
+                {
+                    // Add comments as proper JSON array in multipart
+                    var commentsArray = new string[] { comments };
+                    var commentsJson = JsonSerializer.Serialize(commentsArray);
+                    request.AddParameter("comments", commentsJson); // Works as multipart field
+                }
 
                 // Execute request
                 var response = await client.ExecuteAsync(request);
@@ -120,7 +124,56 @@ namespace Cliq.Api.Repository
                 if (!response.IsSuccessful)
                     return Result.Fail<string>($"File send failed: {response.StatusCode} - {response.Content}");
 
-                return Result.Ok("✅ File successfully sent to user via ZUID!");
+                return Result.Ok("File successfully sent to user via ZUID!");
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<string>($"Exception during file send: {ex.Message}");
+            }
+        }
+
+
+        public async Task<Result<string>> SendFileToUserByZuid(
+            byte[] fileBytes,
+            string fileName ,
+            string contentType ,
+            string zuid,
+            string comments)
+        {
+            if (fileBytes == null || fileBytes.Length == 0)
+                return Result.Fail<string>("File byte array is null or empty.");
+
+            try
+            {
+                var tokenResult = await _authService.GetAccessTokenAsync();
+                if (tokenResult.IsFailed)
+                    return Result.Fail<string>(tokenResult.Errors[0].Message ?? "Error getting access token");
+
+                var accessToken = tokenResult.Value;
+
+                var client = new RestClient($"{_baseUrl}buddies/{zuid}/files");
+                var request = new RestRequest("", Method.Post);
+                request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
+                request.AlwaysMultipartFormData = true;
+
+                // Add the byte array as file
+                request.AddFile("files", fileBytes, fileName, contentType);
+
+                // Add comments if provided
+                if (!string.IsNullOrEmpty(comments))
+                {
+                    var commentsArray = new string[] { comments };
+                    var commentsJson = JsonSerializer.Serialize(commentsArray);
+                    request.AddParameter("comments", commentsJson); // multipart field
+                }
+
+                // Execute request
+                var response = await client.ExecuteAsync(request);
+
+                if (!response.IsSuccessful)
+                    return Result.Fail<string>($"File send failed: {response.StatusCode} - {response.Content}");
+
+                return Result.Ok("File successfully sent to user via ZUID!");
             }
             catch (Exception ex)
             {
@@ -192,20 +245,20 @@ namespace Cliq.Api.Repository
                     loop = 1
                 };
 
-            request.AddJsonBody(body);
+                request.AddJsonBody(body);
 
-            var response = await client.ExecuteAsync(request);
+                var response = await client.ExecuteAsync(request);
 
-            if (!response.IsSuccessful)
-                return Result.Fail<string>($"Failed to send bot call: {response.Content}");
+                if (!response.IsSuccessful)
+                    return Result.Fail<string>($"Failed to send bot call: {response.Content}");
 
-            return Result.Ok("Voice call with confirmation option triggered successfully.");
-        }
+                return Result.Ok("Voice call with confirmation option triggered successfully.");
+            }
             catch (Exception ex)
             {
                 return Result.Fail<string>(ex.Message);
             }
-}
+        }
 
 
     }

@@ -105,10 +105,12 @@ namespace cliq.Api.Repository
                     request.AddFile("file", ReadFully(stream), file.FileName, file.ContentType);
                 }
                 request.AlwaysMultipartFormData = true;
-                // ✅ Send comments as JSON array
-                var commentsJson = JsonSerializer.Serialize(new[] { comments });
-                request.AddParameter("comments", commentsJson);
-
+                if (!string.IsNullOrEmpty(comments))
+                {
+                    // ✅ Send comments as JSON array
+                    var commentsJson = JsonSerializer.Serialize(new[] { comments });
+                    request.AddParameter("comments", commentsJson);
+                }
 
                 // 4️⃣ Execute request
                 var response = await client.ExecuteAsync(request);
