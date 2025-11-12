@@ -11,7 +11,7 @@ namespace Cliq.Api.Interface
         Task<Result<string>> SendTextMessageToUserByZuidAsync(string message, string zuid);
         Task<Result<string>> SendBotVoiceCallAsync(string message, List<string> userIds);
 
-        Task<Result<string>> SendFileToUserByZuid(
+        Task<Result<string>>    SendFileToUserByZuid(
             byte[] fileBytes,
             string fileName,
             string contentType,

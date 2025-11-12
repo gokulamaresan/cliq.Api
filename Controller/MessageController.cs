@@ -308,18 +308,18 @@ namespace Cliq.Api.Controller
 
 
         [HttpPost("send-html-to-file-by-zuid-TNA")]
-        public async Task<IActionResult> SendTnaHtmlToFile(string zuid, [FromBody] TNACommentDto tNACommentDto)
+        public async Task<IActionResult> SendTnaHtmlToFile(string zuidORemail, [FromBody] TNACommentDto tNACommentDto)
         {
             try
             {
-                if (string.IsNullOrEmpty(zuid))
+                if (string.IsNullOrEmpty(zuidORemail))
                     return BadRequest(new { Error = "ZUID is required." });
 
                 var byteRes = await SendHtmlToImage(tNACommentDto);
                 var bytes = (byte[])((FileContentResult)byteRes).FileContents;
 
                 // Send the file to the user
-                var result = await _IMessageInterface.SendFileToUserByZuid(bytes, tNACommentDto.JobNo, "image/png", zuid, $"Recived From {tNACommentDto.JobNo} - {tNACommentDto.TaskName}");
+                var result = await _IMessageInterface.SendFileToUserByZuid(bytes, tNACommentDto.JobNo, "image/png", zuidORemail, $"Recived From {tNACommentDto.JobNo} - {tNACommentDto.TaskName}");
 
                 if (result.IsFailed)
                     return BadRequest(new { Error = result.Errors[0].Message });
