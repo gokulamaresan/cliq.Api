@@ -6,19 +6,26 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Configure Serilog — keep only custom Success/Error logs
+// Updated Serilog configuration
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Error)   // hides default ASP.NET logs
+    .ReadFrom.Configuration(builder.Configuration)  // Load base config from appsettings.json (includes enrichers, console sink, etc.)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
     .MinimumLevel.Override("System", LogEventLevel.Error)
     .Filter.ByIncludingOnly(logEvent =>
         logEvent.MessageTemplate.Text.Contains("✅ Success") ||
         logEvent.MessageTemplate.Text.Contains("❌ Error"))
-    .WriteTo.File("Logs/cliqapi-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 15)
-    .Enrich.FromLogContext()
+    // Single file sink with full path (no duplication now)
+    .WriteTo.File(
+        Path.Combine(builder.Environment.ContentRootPath, "Logs", "cliqapi-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 15,
+        rollOnFileSizeLimit: true)  // Matches your original settings
     .CreateLogger();
 
-
 builder.Host.UseSerilog();
+
+// Optional: Debug log to verify path at startup
+Log.Information("Serilog log path: {Path}", Path.Combine(builder.Environment.ContentRootPath, "Logs", "cliqapi-.log"));
 
 var userApiKey = builder.Configuration["secretKey"];
 var adminApiKey = builder.Configuration["AdminSecretKey"];

@@ -81,11 +81,11 @@ namespace Cliq.Api
 
             app.UseCors("AllowAll");
 
-            if (env.IsDevelopment())
-            {
+            // if (env.IsDevelopment())
+            // {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-            }
+            // }
 
             app.UseHttpsRedirection();
             app.MapControllers();

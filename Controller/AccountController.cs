@@ -1,28 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
 using Cliq.Api.Interface;
 using Cliq.Api.AdminApiAttribute;
+using Cliq.Api.Attributes;  // Assuming [SkipApiKey] is defined here
+using System.IO;  // Ensure this is imported for FileStream and StreamReader
 
 namespace Cliq.Api.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    [AdminApiKey]
+    // [AdminApiKey]  // Commented out, as you're using [SkipApiKey]
+    [SkipApiKey]  // Skips API key validation (custom attribute)
 
     public class AccountController : ControllerBase
     {
-        // private readonly string _logFilePath = Path.Combine(AppContext.BaseDirectory, "Logs", $"log-{DateTime.Now:yyyyMMdd}.txt");
-        private readonly string _logFilePath = Path.Combine(
-     Directory.GetParent(AppContext.BaseDirectory)!.Parent!.Parent!.Parent!.FullName,
-     "Logs",
-     $"log-{DateTime.Now:yyyyMMdd}.txt");
-
-
-
+        private readonly IWebHostEnvironment _env;
+        private readonly string _logFilePath;
         private readonly IAccountInterface _IAccountInterface;
 
-        public AccountController(IAccountInterface IAccountInterface)
+        public AccountController(IAccountInterface IAccountInterface, IWebHostEnvironment env)
         {
             _IAccountInterface = IAccountInterface;
+            _env = env;
+            // Path now matches Serilog's write location
+            _logFilePath = Path.Combine(_env.ContentRootPath, "Logs");
         }
 
         [HttpGet("users")]
@@ -40,7 +40,6 @@ namespace Cliq.Api.Controller
             {
                 return BadRequest(new { errors = ex.Message });
             }
-
         }
 
         [HttpGet("Get-Channels")]
@@ -58,61 +57,110 @@ namespace Cliq.Api.Controller
             {
                 return BadRequest(new { errors = ex.Message });
             }
-
         }
 
-
         [HttpGet("success")]
-        public IActionResult GetSuccessLogs()
+        public async Task<IActionResult> GetSuccessLogs(string filename = "cliqapi-20251112.log")
         {
-            if (!System.IO.File.Exists(_logFilePath))
-                return NotFound(new { message = "Log file not found" });
-
-            var logs = System.IO.File.ReadAllLines(_logFilePath)
-                .Where(line => line.Contains("✅ Success"))
-                .ToList();
-
-            return Ok(new
+            try
             {
-                success = true,
-                count = logs.Count,
-                logs
-            });
+                filename = $"cliqapi-{DateTime.Now:yyyyMMdd}.log";
+                if (!System.IO.File.Exists(Path.Combine(_logFilePath, filename)))
+                    return NotFound(new { message = "Log file not found" });
+
+                var logs = await ReadFilteredLogsAsync(line => line.Contains("✅ Success"), filename);
+                return Ok(new
+                {
+                    success = true,
+                    count = logs.Count,
+                    logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(503, new { errors = $"Service unavailable: {ex.Message}" });  // 503 for server error
+            }
         }
 
         [HttpGet("error")]
-        public IActionResult GetErrorLogs()
+        public async Task<IActionResult> GetErrorLogs(string filename = "cliqapi-20251112.log")
         {
-            if (!System.IO.File.Exists(_logFilePath))
-                return NotFound(new { message = "Log file not found" });
-
-            var logs = System.IO.File.ReadAllLines(_logFilePath)
-                .Where(line => line.Contains("❌ Error"))
-                .ToList();
-
-            return Ok(new
+            try
             {
-                success = true,
-                count = logs.Count,
-                logs
-            });
+                filename = $"cliqapi-{DateTime.Now:yyyyMMdd}.log";
+                if (!System.IO.File.Exists(Path.Combine(_logFilePath, filename)))
+                    return NotFound(new { message = "Log file not found" });
+
+                var logs = await ReadFilteredLogsAsync(line => line.Contains("❌ Error") , filename);
+                return Ok(new
+                {
+                    success = true,
+                    count = logs.Count,
+                    logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(503, new { errors = $"Service unavailable: {ex.Message}" });
+            }
         }
 
         [HttpGet("all")]
-        public IActionResult GetAllLogs()
+        public async Task<IActionResult> GetAllLogs(string filename = "cliqapi-20251112.log")
         {
-            if (!System.IO.File.Exists(_logFilePath))
-                return NotFound(new { message = "Log file not found" });
-
-            var logs = System.IO.File.ReadAllLines(_logFilePath).ToList();
-
-            return Ok(new
+            try
             {
-                success = true,
-                count = logs.Count,
-                logs
-            });
+                filename = $"cliqapi-{DateTime.Now:yyyyMMdd}.log";
+                if (!System.IO.File.Exists(Path.Combine(_logFilePath, filename)))
+                    return NotFound(new { message = "Log file not found" });
+
+                var logs = await ReadAllLogsAsync(filename);
+                return Ok(new
+                {
+                    success = true,
+                    count = logs.Count,
+                    logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(503, new { errors = $"Service unavailable: {ex.Message}" });
+            }
         }
 
+        // Helper method to read and filter logs with shared access
+        private async Task<List<string>> ReadFilteredLogsAsync(Func<string, bool> filter , string filename)
+        {
+            var logs = new List<string>();
+            using (var fileStream = new FileStream(Path.Combine(_logFilePath, filename), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fileStream))
+            {
+                string line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    if (filter(line))
+                    {
+                        logs.Add(line);
+                    }
+                }
+            }
+            return logs;
+        }
+
+        // Helper method to read all logs with shared access
+        private async Task<List<string>> ReadAllLogsAsync(string filename)
+        {
+            var logs = new List<string>();
+            using (var fileStream = new FileStream(Path.Combine(_logFilePath, filename), FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fileStream))
+            {
+                string line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    logs.Add(line);
+                }
+            }
+            return logs;
+        }
     }
 }
