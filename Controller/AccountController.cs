@@ -8,8 +8,8 @@ namespace Cliq.Api.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [AdminApiKey]  // Commented out, as you're using [SkipApiKey]
-    [SkipApiKey]  // Skips API key validation (custom attribute)
+    [AdminApiKey]  // Commented out, as you're using [SkipApiKey]
+    // [SkipApiKey]  // Skips API key validation (custom attribute)
 
     public class AccountController : ControllerBase
     {

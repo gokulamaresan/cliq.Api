@@ -1,3 +1,4 @@
+using Cliq.Api.AdminApiAttribute;
 using Cliq.Api.Interface;
 using Cliq.Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace Cliq.Api.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
+    [AdminApiKey]
     public class AuthController : ControllerBase
     {
         private readonly IAuthtInterface _IAuthtInterface;
