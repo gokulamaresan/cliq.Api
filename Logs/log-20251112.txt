@@ -1,0 +1,42 @@
+2025-11-12 11:39:09.279 +05:30 [INF] ✅ Success | Controller: Auth | Action: AuthorizeUser | Time: 8ms
+2025-11-12 11:39:19.698 +05:30 [INF] ✅ Success | Controller: Auth | Action: AuthorizeUser | Time: 0ms
+2025-11-12 11:39:36.247 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 53ms
+2025-11-12 11:39:36.356 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 60ms
+2025-11-12 11:39:39.355 +05:30 [INF] ✅ Success | Controller: Auth | Action: AuthorizeUser | Time: 0ms
+2025-11-12 11:39:42.495 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 6ms
+2025-11-12 11:39:42.559 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 4ms
+2025-11-12 11:39:53.176 +05:30 [INF] ✅ Success | Controller: Auth | Action: AuthorizeUser | Time: 0ms
+2025-11-12 11:39:59.809 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 0ms
+2025-11-12 11:39:59.864 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 3ms
+2025-11-12 11:40:48.099 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | Time: 0ms
+2025-11-12 11:40:48.162 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 3ms
+2025-11-12 11:40:53.977 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetUsers | StatusCode: 401 | Time: 16ms | Message: Request failed.
+2025-11-12 11:40:59.356 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 1ms
+2025-11-12 11:40:59.425 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 10ms
+2025-11-12 11:41:00.988 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 11:41:01.123 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 1ms
+2025-11-12 11:41:03.543 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetUsers | StatusCode: 401 | Time: 0ms | Message: Request failed.
+2025-11-12 11:41:46.391 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetUsers | StatusCode: 401 | Time: 26ms | Message: Request failed.
+2025-11-12 11:41:58.696 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetUsers | StatusCode: 401 | Time: 1ms | Message: Request failed.
+2025-11-12 11:42:15.181 +05:30 [INF] ✅ Success | Controller: Channel | Action: GetChannelDetails | StatusCode: 200 | Time: 51ms
+2025-11-12 11:46:51.128 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 72ms
+2025-11-12 11:46:51.326 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 63ms
+2025-11-12 11:47:36.999 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetAllLogs | StatusCode: 404 | Time: 28ms | Message: Request failed.
+2025-11-12 11:47:42.121 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetErrorLogs | StatusCode: 404 | Time: 1ms | Message: Request failed.
+2025-11-12 11:59:55.261 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 62ms
+2025-11-12 11:59:55.447 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 59ms
+2025-11-12 12:00:58.843 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetAllLogs | StatusCode: 404 | Time: 28ms | Message: Request failed.
+2025-11-12 12:07:26.355 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 66ms
+2025-11-12 12:07:26.550 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 63ms
+2025-11-12 12:07:37.054 +05:30 [INF] ✅ Success | Controller: Account | Action: GetUsers | StatusCode: 200 | Time: 1058ms
+2025-11-12 12:07:37.302 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 1ms
+2025-11-12 12:07:37.386 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 14ms
+2025-11-12 12:07:40.094 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetAllLogs | StatusCode: 401 | Time: 2ms | Message: Request failed.
+2025-11-12 12:08:05.849 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:08:05.916 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 6ms
+2025-11-12 12:09:01.903 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetSuccessLogs | StatusCode: 404 | Time: 6822ms | Message: Request failed.
+2025-11-12 12:10:47.948 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 1852ms
+2025-11-12 12:10:48.083 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 66ms
+2025-11-12 12:14:19.915 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 72ms
+2025-11-12 12:14:20.050 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 66ms
+2025-11-12 12:14:51.112 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetAllLogs | StatusCode: 404 | Time: 13838ms | Message: Request failed.

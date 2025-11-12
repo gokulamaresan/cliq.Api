@@ -975,8 +975,8 @@
     "email_id": "vasanth.qad@sakthiinfra.com",
     "zuid": "60023786753",
     "zoid": "60019056367",
-    "display_name": "VASANTH SIS QAD",
-    "name": "VASANTH SIS QAD",
+    "display_name": "VASANTH  SM- CSA QAD",
+    "name": "VASANTH  SM- CSA QAD",
     "organization_id": "60022630915",
     "id": "60023786753"
   },
@@ -2700,6 +2700,15 @@
     "id": "60031418535"
   },
   {
+    "email_id": "venkatesan@sakthiinfra.com",
+    "zuid": "60057924690",
+    "zoid": "60019056367",
+    "display_name": "venkatesan",
+    "name": "venkatesan ",
+    "organization_id": "60022630915",
+    "id": "60057924690"
+  },
+  {
     "email_id": "shakinsha@sakthiinfra.com",
     "zuid": "60047597541",
     "zoid": "60019056367",
@@ -2752,6 +2761,15 @@
     "name": "Ramyapriya.merch ",
     "organization_id": "60022630915",
     "id": "60056616659"
+  },
+  {
+    "email_id": "tracking.rijith@sakthiinfra.com",
+    "zuid": "60057924959",
+    "zoid": "60019056367",
+    "display_name": "tracking.rijith",
+    "name": "tracking.rijith ",
+    "organization_id": "60022630915",
+    "id": "60057924959"
   },
   {
     "email_id": "bharani.merch@sakthiinfra.com",
@@ -2950,6 +2968,15 @@
     "name": "Josephthomas Nedumannil",
     "organization_id": "60022630915",
     "id": "60046653473"
+  },
+  {
+    "email_id": "gnandhini.merch@sakthiinfra.com",
+    "zuid": "60057924688",
+    "zoid": "60019056367",
+    "display_name": "gnandhini.merch",
+    "name": "gnandhini.merch ",
+    "organization_id": "60022630915",
+    "id": "60057924688"
   },
   {
     "email_id": "kdhanapal@sakthiinfra.com",

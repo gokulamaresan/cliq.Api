@@ -1,0 +1,27 @@
+2025-11-12 12:19:21.385 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 69ms
+2025-11-12 12:19:21.576 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 66ms
+2025-11-12 12:20:02.470 +05:30 [INF] ✅ Success | Controller: Account | Action: GetAllLogs | StatusCode: 200 | Time: 6063ms
+2025-11-12 12:20:18.639 +05:30 [INF] ✅ Success | Controller: Account | Action: GetErrorLogs | StatusCode: 200 | Time: 3038ms
+2025-11-12 12:48:02.859 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 59ms
+2025-11-12 12:48:03.054 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 55ms
+2025-11-12 12:48:05.359 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 2ms
+2025-11-12 12:48:05.433 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 6ms
+2025-11-12 12:50:06.763 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 1ms
+2025-11-12 12:50:06.825 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 7ms
+2025-11-12 12:50:32.027 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 60ms
+2025-11-12 12:50:32.047 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 13ms
+2025-11-12 12:50:32.048 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 13ms
+2025-11-12 12:50:32.049 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 14ms
+2025-11-12 12:50:32.189 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:50:32.225 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 59ms
+2025-11-12 12:50:37.000 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:50:37.080 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 4ms
+2025-11-12 12:50:38.479 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:50:38.548 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 4ms
+2025-11-12 12:51:04.198 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:51:04.275 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 6ms
+2025-11-12 12:51:29.811 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 0ms
+2025-11-12 12:51:29.893 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 3ms
+2025-11-12 15:47:27.520 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 69ms
+2025-11-12 15:47:27.674 +05:30 [INF] ✅ Success | Controller: Unknown | Action: Unknown | StatusCode: 200 | Time: 63ms
+2025-11-12 15:47:36.042 +05:30 [ERR] ❌ Error | Controller: Account | Action: GetUsers | StatusCode: 401 | Time: 24ms | Message: Request failed.
