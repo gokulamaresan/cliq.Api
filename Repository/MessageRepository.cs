@@ -265,7 +265,7 @@ namespace Cliq.Api.Repository
 
 
 
-        public async Task<Result<string>> SicalSendFileToUserByZuid(
+        public async Task<Result<string>> SisalSendFileToUserByZuid(
             byte[] fileBytes,
             string fileName,
             string contentType,

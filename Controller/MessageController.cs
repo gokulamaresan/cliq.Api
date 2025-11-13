@@ -559,8 +559,8 @@ namespace Cliq.Api.Controller
 
 
 
-        [HttpPost("send-sical-otp-html-to-file-by-zuid")]
-        public async Task<IActionResult> SendOtpHtmlToFileByZuid(string zuidORemail, [FromBody] SICALApiRequestDto otp)
+        [HttpPost("send-sisal-otp-html-to-file-by-zuid")]
+        public async Task<IActionResult> SendOtpHtmlToFileByZuid(string zuidORemail, [FromBody] SISALApiRequestDto otp)
         {
             try
             {
@@ -594,7 +594,7 @@ namespace Cliq.Api.Controller
             }
         }
 
-        private static async Task<byte[]> ConvertOtpHtmlToImage(SICALApiRequestDto otp)
+        private static async Task<byte[]> ConvertOtpHtmlToImage(SISALApiRequestDto otp)
         {
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
@@ -708,7 +708,7 @@ namespace Cliq.Api.Controller
             <div class='otp-card'>
                 <div class='card-header'>
                     <h1><i class='bi bi-shield-lock'></i> OTP Verification</h1>
-                    <p>SICAL OTP Notification</p>
+                    <p>SISAL OTP Notification</p>
                 </div>
                 <div class='card-body'>
                     <div class='detail-row'><i class='bi bi-person-circle'></i> <strong>Login User:</strong> {otp.LoginUserName}</div>

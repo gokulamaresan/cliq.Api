@@ -18,7 +18,7 @@ namespace Cliq.Api.Interface
             string zuid,
             string comments);
 
-            Task<Result<string>> SicalSendFileToUserByZuid(
+            Task<Result<string>> SisalSendFileToUserByZuid(
             byte[] fileBytes,
             string fileName,
             string contentType,

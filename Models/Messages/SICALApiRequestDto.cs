@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace cliq.Api.Models.Messages
 {
-    public class SICALApiRequestDto
+    public class SISALApiRequestDto
     {
         public string LoginUserName { get; set; }
         public string FullName { get; set; }
