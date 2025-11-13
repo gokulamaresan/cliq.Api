@@ -135,8 +135,8 @@ namespace Cliq.Api.Repository
 
         public async Task<Result<string>> SendFileToUserByZuid(
             byte[] fileBytes,
-            string fileName ,
-            string contentType ,
+            string fileName,
+            string contentType,
             string zuid,
             string comments)
         {
@@ -260,6 +260,55 @@ namespace Cliq.Api.Repository
             }
         }
 
+
+
+
+
+
+        public async Task<Result<string>> SicalSendFileToUserByZuid(
+            byte[] fileBytes,
+            string fileName,
+            string contentType,
+            string zuid,
+            string comments)
+        {
+            if (fileBytes == null || fileBytes.Length == 0)
+                return Result.Fail<string>("File byte array is null or empty.");
+
+            try
+            {
+                var tokenResult = await _authService.GetAccessTokenAsync();
+                if (tokenResult.IsFailed)
+                    return Result.Fail<string>(tokenResult.Errors[0].Message ?? "Error getting access token");
+
+                var accessToken = tokenResult.Value;
+
+                var client = new RestClient($"{_baseUrl}buddies/{zuid}/files");
+                var request = new RestRequest("", Method.Post);
+                request.AddHeader("Authorization", $"Zoho-oauthtoken {accessToken}");
+                request.AlwaysMultipartFormData = true;
+
+                request.AddFile("files", fileBytes, fileName, contentType);
+
+                if (!string.IsNullOrEmpty(comments))
+                {
+                    var commentsArray = new string[] { comments };
+                    var commentsJson = JsonSerializer.Serialize(commentsArray);
+                    request.AddParameter("comments", commentsJson);
+                }
+
+                var response = await client.ExecuteAsync(request);
+
+                if (!response.IsSuccessful)
+                    return Result.Fail<string>($"File send failed: {response.StatusCode} - {response.Content}");
+
+                return Result.Ok("File successfully sent to user via ZUID!");
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<string>($"Exception during file send: {ex.Message}");
+            }
+        }
 
     }
 }

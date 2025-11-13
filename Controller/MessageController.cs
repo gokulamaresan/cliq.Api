@@ -421,6 +421,9 @@ namespace Cliq.Api.Controller
                                 <html lang='en'>
                                 <head>
                                 <meta charset='UTF-8'>
+
+                                 <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
+                                <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>
                                 <style>
                                body {{
                                     margin: 0;
@@ -517,8 +520,7 @@ namespace Cliq.Api.Controller
                                 }}
 
                                 </style>
-                                <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
-                                <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>
+                               
                                 </head>
                                 <body>
                                 {htmlContent}
@@ -551,6 +553,201 @@ namespace Cliq.Api.Controller
             catch (Exception ex)
             {
                 throw new Exception("Failed to convert HTML to image: " + ex.Message, ex);
+            }
+        }
+
+
+
+
+        [HttpPost("send-sical-otp-html-to-file-by-zuid")]
+        public async Task<IActionResult> SendOtpHtmlToFileByZuid(string zuidORemail, [FromBody] SICALApiRequestDto otp)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(zuidORemail))
+                    return BadRequest(new { Error = "ZUID or Email is required." });
+
+                // Convert the OTP card to image
+                var imageBytes = await ConvertOtpHtmlToImage(otp);
+
+                // Send image via Zoho Cliq
+                var result = await _IMessageInterface.SendFileToUserByZuid(
+                    fileBytes: imageBytes,
+                    fileName: $"{otp.LoginUserName}_otp.png",
+                    contentType: "image/png",
+                    zuid: zuidORemail,
+                    comments: $"OTP Notification for {otp.LoginUserName}"
+                );
+
+                if (result.IsFailed)
+                    return BadRequest(new { Error = result.Errors[0].Message });
+
+                return Ok(new
+                {
+                    Message = "✅ OTP image sent successfully!",
+                    ZUID = zuidORemail
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+            }
+        }
+
+        private static async Task<byte[]> ConvertOtpHtmlToImage(SICALApiRequestDto otp)
+        {
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+
+            try
+            {
+                using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+                });
+
+                using var page = await browser.NewPageAsync();
+                await page.SetViewportAsync(new ViewPortOptions
+                {
+                    Width = 420,
+                    Height = 900,
+                    DeviceScaleFactor = 2
+                });
+
+                string htmlContent = $@"
+        <!DOCTYPE html>
+        <html lang='en'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <!-- ✅ Bootstrap + Icons CDN -->
+            <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
+            <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>
+
+            <style>
+                body {{
+                    font-family: 'Poppins', sans-serif;
+                    background: linear-gradient(135deg, #c2e9fb 0%, #a1c4fd 100%);
+                    margin: 0;
+                    padding: 30px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                }}
+                .otp-card {{
+                    width: 360px;
+                    background: rgba(255,255,255,0.95);
+                    border-radius: 16px;
+                    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                }}
+                .card-header {{
+                    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+                    color: #fff;
+                    text-align: center;
+                    padding: 14px 10px;
+                }}
+                .card-header h1 {{
+                    font-size: 20px;
+                    margin: 0;
+                }}
+                .card-header p {{
+                    font-size: 13px;
+                    opacity: 0.9;
+                    margin: 4px 0 0;
+                }}
+                .card-body {{ padding: 12px 18px; }}
+                .detail-row {{
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #f9fafb;
+                    border-left: 3px solid #6366f1;
+                    border-radius: 8px;
+                    padding: 8px 10px;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    color: #374151;
+                }}
+                .detail-row i {{
+                    color: #4f46e5;
+                    font-size: 15px;
+                }}
+                .otp-display {{
+                    text-align: center;
+                    margin: 25px 0 20px;
+                    border-radius: 10px;
+                    background: #f3f4f6cc;
+                    padding: 12px;
+                }}
+                .otp-display h2 {{
+                    font-size: 16px;
+                    margin-bottom: 6px;
+                    color: #374151;
+                }}
+                .otp-code {{
+                    font-size: 30px;
+                    font-weight: 700;
+                    letter-spacing: 6px;
+                    background: linear-gradient(90deg, #6366f1, #9333ea);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }}
+                .card-footer {{
+                    background: rgba(255,255,255,0.9);
+                    padding: 10px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #4b5563;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class='otp-card'>
+                <div class='card-header'>
+                    <h1><i class='bi bi-shield-lock'></i> OTP Verification</h1>
+                    <p>SICAL OTP Notification</p>
+                </div>
+                <div class='card-body'>
+                    <div class='detail-row'><i class='bi bi-person-circle'></i> <strong>Login User:</strong> {otp.LoginUserName}</div>
+                    <div class='detail-row'><i class='bi bi-person-badge'></i> <strong>Full Name:</strong> {otp.FullName}</div>
+                    <div class='detail-row'><i class='bi bi-fingerprint'></i> <strong>Bio ID:</strong> {otp.BioId}</div>
+                    <div class='detail-row'><i class='bi bi-building'></i> <strong>Department:</strong> {otp.Department}</div>
+                    <div class='detail-row'><i class='bi bi-person-check'></i> <strong>Req. Bio ID:</strong> {otp.RequestBioId}</div>
+                    <div class='detail-row'><i class='bi bi-person-lines-fill'></i> <strong>Staff Name:</strong> {otp.StaffName}</div>
+
+                    <div class='otp-display'>
+                        <h2>Your Secure OTP</h2>
+                        <div class='otp-code'>{otp.Otp}</div>
+                    </div>
+                </div>
+                <div class='card-footer'>
+                    <i class='bi bi-clock-history'></i> This OTP expires in <strong>{otp.ExpiryTime} minutes</strong>.
+                </div>
+            </div>
+        </body>
+        </html>";
+
+                await page.SetContentAsync(htmlContent);
+                await page.WaitForSelectorAsync(".otp-card");
+
+                var element = await page.QuerySelectorAsync(".otp-card");
+                if (element == null)
+                    throw new Exception("OTP card not found in HTML.");
+
+                var screenshotBytes = await element.ScreenshotDataAsync(new ScreenshotOptions
+                {
+                    Type = ScreenshotType.Png,
+                    OmitBackground = false
+                });
+
+                return screenshotBytes;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to convert OTP HTML to image: {ex.Message}", ex);
             }
         }
 
