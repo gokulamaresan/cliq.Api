@@ -308,253 +308,273 @@ namespace Cliq.Api.Controller
 
 
         [HttpPost("send-html-to-file-by-zuid-TNA")]
-        public async Task<IActionResult> SendTnaHtmlToFile(string zuidORemail, [FromBody] TNACommentDto tNACommentDto)
+        public async Task<IActionResult> SendTnaHtmlToFile(string zuidORemail, [FromBody] TNACommentDto dto)
         {
             try
             {
                 if (string.IsNullOrEmpty(zuidORemail))
                     return BadRequest(new { Error = "ZUID is required." });
 
-                var byteRes = await SendHtmlToImage(tNACommentDto);
-                var bytes = (byte[])((FileContentResult)byteRes).FileContents;
+                var bytes = await GenerateTnaCardImage(dto);
 
-                // Send the file to the user
-                var result = await _IMessageInterface.SendFileToUserByZuid(bytes, tNACommentDto.JobNo, "image/png", zuidORemail, $"Recived From {tNACommentDto.JobNo} - {tNACommentDto.TaskName}");
+                var result = await _IMessageInterface.SendFileToUserByZuid(
+                    bytes,
+                    dto.JobNo,
+                    "image/png",
+                    zuidORemail,
+                    $"Received From {dto.JobNo} - {dto.TaskName}"
+                );
 
                 if (result.IsFailed)
                     return BadRequest(new { Error = result.Errors[0].Message });
 
                 return Ok(new
                 {
-                    Message = $"HTML converted to image and sent successfully",
+                    Message = "HTML converted to image and sent successfully",
                     FileId = result.Value
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
 
 
 
-        private async Task<IActionResult> SendHtmlToImage(TNACommentDto tNACommentDto)
+
+
+        private async Task<byte[]> GenerateTnaCardImage(TNACommentDto dto)
         {
-            try
-            {
+            string html = $@"
+<div class='card' id='commentCard'>
+
+    <div class='header'>
+
+        <div class='left-header'>
+            <i class='bi bi-briefcase header-icon'></i>
+            <div class='job-details'>
+                <h3>{dto.JobNo}</h3>
+                <p>{dto.CommentGroup}</p>
+            </div>
+        </div>
+
+        <div class='premium-badge'>
+            <i class='bi bi-star-fill'></i> {dto.TaskName}
+        </div>
+
+    </div>
+
+    <div class='body'>
+      <div class='comment-group'>
+        <i class='bi bi-chat-dots comment-group-icon'></i>
+        <span>Comment</span>
+      </div>
+      <p class='comment-text'>{dto.CommentText}</p>
+    </div>
+
+    <div class='footer'>
+      <div class='footer-item'>
+        <i class='bi bi-person'></i>
+        <span>{dto.UserName}</span>
+      </div>
+      <div class='footer-item'>
+        <i class='bi bi-clock'></i>
+        <span>{dto.CreatedTime}</span>
+      </div>
+    </div>
+
+</div>";
 
 
-                var maincontent = $@"<div class='command-card'>
-                                        <div class='command-header'>
-                                        <div class='d-flex'>
-                                            <h2><i class='bi bi-gear-fill'></i> {tNACommentDto.JobNo}</h2>
-                                            <div class='status-badge ms-2'>{tNACommentDto.TaskName}</div>
-                                        </div>
-                                        <div class='command-time'><i class='bi bi-clock-fill'></i> {tNACommentDto.CreatedTime}</div>
-                                        </div>
 
-                                        <div class='command-body'>
-                                        <div class='detail'>
-                                            <label><i class='bi bi-upc-scan'></i> Job No:</label>
-                                            <span>{tNACommentDto.JobNo}</span>
-                                        </div>
-
-                                        <div class='detail'>
-                                            <label><i class='bi bi-grid-3x3-gap-fill'></i> Category:</label>
-                                            <span>{tNACommentDto.CommentGroup}</span>
-                                        </div>
-
-                                        <div class='detail'>
-                                            <label><i class='bi bi-terminal'></i> Command:</label>
-                                            <span>
-                                                {tNACommentDto.CommentText}
-                                            </span>
-                                        </div>
-
-                                        <div class='detail'>
-                                            <label><i class='bi bi-person-badge-fill'></i> Command By:</label>
-                                            <span>{tNACommentDto.UserName}</span>
-                                        </div>
-                                        </div>
-                                    </div>";
-
-
-                var bytes = await ConvertHtmlToImageBytesTNA(maincontent);
-
-                return File(bytes, "image/png", "converted_image.png");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = $"Unexpected error: {ex.Message}" });
-            }
+            return await ConvertToImage(html);
         }
 
 
 
-        private static async Task<byte[]> ConvertHtmlToImageBytesTNA(string html)
+
+        private static async Task<byte[]> ConvertToImage(string innerHtml)
         {
-            var htmlContent = html.Replace("\\n", "\n");
             var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();
 
-            try
+            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-                {
-                    Headless = true,
-                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
-                });
+                Headless = true,
+                Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+            });
 
-                using var page = await browser.NewPageAsync();
+            using var page = await browser.NewPageAsync();
 
-                // ✅ Set a minimal viewport to fit content automatically
-                await page.SetViewportAsync(new ViewPortOptions
-                {
-                    Width = 800,
-                    Height = 600,
-                    DeviceScaleFactor = 2 // makes image sharper (2x resolution)
-                });
-
-                // ✅ Load HTML content (with transparent background)
-                string fullHtml = $@"
-                                <!DOCTYPE html>
-                                <html lang='en'>
-                                <head>
-                                <meta charset='UTF-8'>
-
-                                 <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet' integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
-                                <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>
-                                <style>
-                               body {{
-                                    margin: 0;
-                                    padding: 0;
-                                    background: #0d2015;
-                                    display: flex;
-                                    justify-content: center;
-                                    align-items: center;
-                                    min-height: 100vh;
-                                    font-family: 'Gill Sans', 'Trebuchet MS', sans-serif !important;
-                                }}
-
-                                .command-card {{
-                                    background: #133622;
-                                    color: #edf1f6;
-                                    border-radius: 14px;
-                                    width: 480px;
-                                    padding: 22px 28px;
-                                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-                                    border: 1px solid rgba(255, 255, 255, 0.1);
-                                }}
-
-                                .command-header {{
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: flex-start;
-                                    margin-bottom: 16px;
-                                }}
-
-                                .command-header h2 {{
-                                    font-size: 0.95rem;
-                                    margin: 0;
-                                    font-weight: 600;
-                                    color: #edf1f6;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 6px;
-                                }}
-
-                                .command-header h2 i {{
-                                    color: #22b469;
-                                }}
-
-                                .status-badge {{
-                                    background: #22b469;
-                                    color: #fff;
-                                    font-size: 0.7rem;
-                                    padding: 3px 8px;
-                                    border-radius: 6px;
-                                    font-weight: 600;
-                                    text-transform: uppercase;
-                                }}
-
-                                .command-time {{
-                                    font-size: 0.75rem;
-                                    color: #b9d3c2;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 5px;
-                                }}
-
-                                .command-time i {{
-                                    color: #22b469;
-                                }}
-
-                                .command-body {{
-                                    border-top: 1px solid rgba(255, 255, 255, 0.12);
-                                    padding-top: 12px;
-                                }}
-
-                                .detail {{
-                                    margin-bottom: 10px;
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: flex-start;
-                                }}
-
-                                .detail label {{
-                                    color: #8fda91;
-                                    font-weight: 600;
-                                    font-size: 0.75rem;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 5px;
-                                    flex: 0 0 30%;
-                                }}
-
-                                .detail span {{
-                                    flex: 1;
-                                    color: #edf1f6;
-                                    font-size: 0.75rem;
-                                    line-height: 1.3rem;
-                                    word-wrap: break-word;
-                                }}
-
-                                </style>
-                               
-                                </head>
-                                <body>
-                                {htmlContent}
-                                </body>
-                                </html>";
-
-                await page.SetContentAsync(fullHtml, new NavigationOptions
-                {
-                    WaitUntil = new[] { WaitUntilNavigation.Load }
-                });
-
-                // ✅ Wait for .command-card to render
-                await page.WaitForSelectorAsync(".command-card");
-
-                // ✅ Select the element
-                var element = await page.QuerySelectorAsync(".command-card");
-
-                if (element == null)
-                    throw new Exception("Command card not found in HTML content.");
-
-                // ✅ Screenshot only the element (no background or blank space)
-                var screenshotBytes = await element.ScreenshotDataAsync(new ScreenshotOptions
-                {
-                    Type = ScreenshotType.Png,
-                    OmitBackground = true // transparent background
-                });
-
-                return screenshotBytes;
-            }
-            catch (Exception ex)
+            await page.SetViewportAsync(new ViewPortOptions
             {
-                throw new Exception("Failed to convert HTML to image: " + ex.Message, ex);
-            }
+                Width = 900,
+                Height = 1200,
+                DeviceScaleFactor = 2
+            });
+
+            string html = @$"
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+
+<!-- FIXED ICON LOAD -->
+<link rel='stylesheet'
+      href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css'>
+
+<style>
+/* RESET */
+* {{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}}
+
+body {{
+  font-family: 'Segoe UI', sans-serif;
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}}
+
+/* CARD */
+.card {{
+  width: 410px;
+  padding: 35px 50px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(220,220,220,0.55);
+  box-shadow:
+    0px 8px 20px rgba(0,0,0,0.06),
+    0px 2px 6px rgba(0,0,0,0.04);
+
+  position: relative;
+  color: #1e293b;
+}}
+
+/* ---- HEADER FIX ---- */
+.header {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}}
+
+.left-header {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}}
+
+.header-icon {{
+  font-size: 31px;
+  color: #6b7280;
+}}
+
+.job-details h3 {{
+  font-size: 20px;
+  font-weight: 800;
+}}
+
+.job-details p {{
+  font-size: 12px;
+  color: #475569;
+}}
+
+/* ---- PREMIUM BADGE ---- */
+.premium-badge {{
+  background: linear-gradient(135deg, #fde68a, #fcd34d, #fbbf24);
+  padding: 6px 13px;
+  border-radius: 40px;
+
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #3d3d3d;
+  box-shadow: 0px 6px 16px rgba(251,191,36,0.45);
+}}
+
+/* ---- BODY ---- */
+.comment-group {{
+  display: flex;
+  align-items: center;
+  margin: 18px 0 10px 0;
+}}
+
+.comment-group-icon {{
+  font-size: 20px;
+  color: #2563eb;
+  margin-right: 10px;
+}}
+
+.comment-group span {{
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #1e40af;
+  text-transform: uppercase;
+}}
+
+.comment-text {{
+  font-size: 13px;
+  line-height: 1.7;
+  color: #1f2937;
+  margin-bottom: 22px;
+}}
+
+/* ---- FOOTER ---- */
+.footer {{
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #475569;
+}}
+
+.footer-item {{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}}
+
+
+</style>
+</head>
+
+<body>
+    {innerHtml}
+</body>
+
+</html>";
+
+            await page.SetContentAsync(html);
+
+            // Wait for Bootstrap Icons font to finish loading
+            await page.WaitForNetworkIdleAsync();
+
+            // Extra safety delay to render icons
+            await page.WaitForTimeoutAsync(300);
+
+            await page.WaitForSelectorAsync(".card");
+
+            var card = await page.QuerySelectorAsync(".card");
+
+            return await card.ScreenshotDataAsync(new ScreenshotOptions
+            {
+                Type = ScreenshotType.Png,
+                OmitBackground = true
+            });
         }
+
+
 
 
 
